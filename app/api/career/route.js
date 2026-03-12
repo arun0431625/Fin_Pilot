@@ -1,16 +1,14 @@
 import { NextResponse } from "next/server";
 
 export async function POST(req) {
-
   try {
 
-    const body = await req.json();
-    const question = body.question;
+    const { question } = await req.json();
 
     const apiKey = process.env.GEMINI_API_KEY;
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=" + apiKey,
       {
         method: "POST",
         headers: {
@@ -21,9 +19,10 @@ export async function POST(req) {
             {
               parts: [
                 {
-                  text: `You are a finance career mentor from India.
+                  text: `You are a finance career mentor from India. Give practical advice.
 
-User question: ${question}`
+User Question:
+${question}`
                 }
               ]
             }
@@ -34,17 +33,26 @@ User question: ${question}`
 
     const data = await response.json();
 
-    // 🔴 DEBUG RETURN
-    return NextResponse.json({
-      debug: data
-    });
+    let answer = "AI response not available.";
+
+    if (
+      data &&
+      data.candidates &&
+      data.candidates.length > 0 &&
+      data.candidates[0].content &&
+      data.candidates[0].content.parts &&
+      data.candidates[0].content.parts.length > 0
+    ) {
+      answer = data.candidates[0].content.parts[0].text;
+    }
+
+    return NextResponse.json({ answer });
 
   } catch (error) {
 
     return NextResponse.json({
-      error: error.message
+      answer: "Error: " + error.message
     });
 
   }
-
 }
