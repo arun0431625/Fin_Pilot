@@ -5,6 +5,7 @@ export async function POST(req) {
   try {
 
     const { question } = await req.json();
+
     const apiKey = process.env.GEMINI_API_KEY;
 
     const response = await fetch(
@@ -17,30 +18,34 @@ export async function POST(req) {
         body: JSON.stringify({
           contents: [
             {
+              role: "user",
               parts: [
                 {
                   text: `You are a finance career mentor from India.
+Give clear structured advice.
 
-Give clear practical advice.
-
-Question:
+User Question:
 ${question}`
                 }
               ]
             }
-          ]
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 800
+          }
         })
       }
     );
 
     const data = await response.json();
 
-    console.log("Gemini response:", data);
+    console.log(data);
 
     let answer = "AI response not available.";
 
-    if (data.candidates) {
-      const parts = data.candidates[0]?.content?.parts;
+    if (data?.candidates?.length > 0) {
+      const parts = data.candidates[0].content.parts;
 
       if (parts && parts.length > 0) {
         answer = parts.map(p => p.text).join(" ");
@@ -50,8 +55,6 @@ ${question}`
     return NextResponse.json({ answer });
 
   } catch (error) {
-
-    console.error(error);
 
     return NextResponse.json({
       answer: "Error: " + error.message
